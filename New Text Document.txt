@@ -1,0 +1,90 @@
+from flask import Flask, render_template_string, request, redirect, session
+
+app = Flask(__name__)
+app.secret_key = 'super-secret-key' # จำเป็นสำหรับการใช้ระบบ Login (session)
+
+# ฐานข้อมูลจำลอง (เก็บไว้ในตัวแปร)
+submissions = [] # เก็บสิ่งที่คนกดส่งมา
+users = {
+    "admin": "1234",  # Username: Password ของแอดมิน
+    "guest": "5555"   # Username: Password ของคนทั่วไป
+}
+
+@app.route('/')
+def home():
+    if 'user' not in session:
+        return redirect('/login')
+    
+    # หน้าเว็บสำหรับคนทั่วไป (User Interface)
+    return render_template_string('''
+        <link rel="stylesheet" href="https://cloudflare.com"/>
+        <style>
+            body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f4f7f6; }
+            .btn { padding: 15px; margin: 10px; border: none; border-radius: 10px; cursor: pointer; color: white; font-weight: bold; }
+            .logout { color: red; text-decoration: none; }
+        </style>
+        <div class="animate__animated animate__zoomIn">
+            <h1>สวัสดีคุณ {{ user }} 👋</h1>
+            <p>เลือกสิ่งที่ต้องการส่งให้แอดมิน:</p>
+            <form action="/send" method="post">
+                <button name="msg" value="หิวข้าวแล้ว" class="btn" style="background:#ff9f43">🍱 หิวข้าว</button>
+                <button name="msg" value="อยากเลิกเรียน" class="btn" style="background:#ee5253">😴 อยากพัก</button>
+            </form>
+            <br><a href="/logout" class="logout">ออกจากระบบ</a>
+            {% if user == 'admin' %}
+                <br><br><a href="/admin" style="color: blue;">เข้าสู่หน้าแอดมิน 🛠️</a>
+            {% endif %}
+        </div>
+    ''', user=session['user'])
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username in users and users[username] == password:
+            session['user'] = username
+            return redirect('/')
+        return "รหัสผ่านไม่ถูกต้อง! <a href='/login'>ลองใหม่</a>"
+    
+    return '''
+        <style>body{text-align:center; padding-top:100px; font-family:sans-serif;}</style>
+        <h2>เข้าสู่ระบบ</h2>
+        <form method="post">
+            <input type="text" name="username" placeholder="Username" required><br><br>
+            <input type="password" name="password" placeholder="Password" required><br><br>
+            <button type="submit">Login</button>
+        </form>
+    '''
+
+@app.route('/send', methods=['POST'])
+def send():
+    msg = request.form.get('msg')
+    submissions.append({"user": session['user'], "message": msg})
+    return f"<h3>ส่งข้อมูล '{msg}' สำเร็จ!</h3><a href='/'>กลับหน้าหลัก</a>"
+
+@app.route('/admin')
+def admin_panel():
+    if session.get('user') != 'admin':
+        return "คุณไม่มีสิทธิ์เข้าหน้านี้!", 403
+    
+    # หน้าแสดงผลสำหรับแอดมิน
+    return render_template_string('''
+        <h2>🛠️ หน้า Dashboard แอดมิน</h2>
+        <p>รายการที่ถูกส่งมาทั้งหมด:</p>
+        <table border="1" style="width:100%; text-align:left;">
+            <tr><th>ผู้ส่ง</th><th>ข้อความ</th></tr>
+            {% for item in data %}
+            <tr><td>{{ item.user }}</td><td>{{ item.message }}</td></tr>
+            {% endfor %}
+        </table>
+        <br><a href="/">กลับหน้าหลัก</a>
+    ''', data=submissions)
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect('/login')
+
+if __name__ == '__main__':
+    app.run(debug=True)
