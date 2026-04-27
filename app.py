@@ -128,6 +128,6 @@ def logout():
     session.pop('user', None)
     return redirect('/login')
 
-if __name__ == '__main__':
 init_db()
-    app.run(host='0.0.0.0', port=10000)
+if __name__ == '__main__':
+     app.run(host='0.0.0.0', port=10000)
