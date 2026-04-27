@@ -46,7 +46,7 @@ def login():
     if request.method == 'POST':
         user = request.form.get('username')
         pwd = request.form.get('password')
-        with sqlite3.connect('database.db') as conn:
+        with sqlite3.connect('new_data.db') as conn:
             res = conn.execute('SELECT password FROM users WHERE username = ?', (user,)).fetchone()
         if res and check_password_hash(res[0], pwd):
             session['user'] = user
@@ -97,14 +97,14 @@ def home():
 @app.route('/send', methods=['POST'])
 def send():
     msg = request.form.get('msg')
-    with sqlite3.connect('database.db') as conn:
+    with sqlite3.connect('new_data.db') as conn:
         conn.execute('INSERT INTO messages (user, content) VALUES (?, ?)', (session['user'], msg))
     return "<h3>บันทึกความในใจแล้ว! ✨</h3><a href='/'>กลับหน้าหลัก</a>"
 
 @app.route('/admin')
 def admin():
     if session.get('user') != 'admin': return "เฉพาะแอดมินเท่านั้น!", 403
-    with sqlite3.connect('database.db') as conn:
+    with sqlite3.connect('new_data.db') as conn:
         data = conn.execute('SELECT user, content FROM messages').fetchall()
     return render_template_string('''
         <h2>🛠️ รายการความในใจทั้งหมด (ลับเฉพาะแอดมิน)</h2>
@@ -130,4 +130,4 @@ def logout():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=10000)
