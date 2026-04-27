@@ -7,7 +7,7 @@ app.secret_key = 'heart-secret-key'
 
 # --- ระบบจัดการฐานข้อมูล ---
 def init_db():
-    with sqlite3.connect('database.db') as conn:
+    with sqlite3.connect('new_data.db') as conn:
         # ตารางผู้ใช้งาน
         conn.execute('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)')
         # ตารางข้อความความในใจ
@@ -22,7 +22,7 @@ def register():
         pwd = request.form.get('password')
         hashed_pwd = generate_password_hash(pwd) # เข้ารหัสเพื่อความปลอดภัย
         try:
-            with sqlite3.connect('database.db') as conn:
+            with sqlite3.connect('new_data.db') as conn:
                 conn.execute('INSERT INTO users VALUES (?, ?)', (user, hashed_pwd))
             return "สมัครสำเร็จ! <a href='/login'>ไปล็อกอินกันเลย</a>"
         except:
